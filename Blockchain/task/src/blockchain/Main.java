@@ -1,17 +1,18 @@
 package blockchain;
 
-import blockchain.block.Blockchain;
-import java.util.Scanner;
-
+import blockchain.block.BlockchainFactory;
+import java.util.concurrent.ExecutionException;
 public class Main {
-    public static void main(String[] args) {
-        System.out.print("Enter how many zeros the hash must start with: ");
-        final var zeros = new Scanner(System.in).nextInt();
-        System.out.println();
-        final var blockchain = Blockchain.getInstance(zeros);
-        blockchain.generateBlocks(5);
-        System.out.println(blockchain);
+    public static void main(String[] args) throws ExecutionException,
+                                                 InterruptedException {
+        var zeroesInHash = 0;
+        var chainFactory = BlockchainFactory
+                                          .getInstance();
+        var blockChain = chainFactory
+                                   .generateChainSizeOf(5,
+                                  zeroesInHash);
     }
 }
+
 
 

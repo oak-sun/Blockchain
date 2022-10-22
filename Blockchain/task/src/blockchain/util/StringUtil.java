@@ -1,4 +1,4 @@
-package blockchain;
+package blockchain.util;
 
 import lombok.NoArgsConstructor;
 import java.nio.charset.StandardCharsets;
@@ -9,12 +9,13 @@ import java.security.NoSuchAlgorithmException;
 public class StringUtil {
     /* Applies Sha256 to a string and returns a hash. */
     public static String applySha256(String input){
-
         try {
-            var digest = MessageDigest.getInstance("SHA-256");
+            var digest = MessageDigest
+                                   .getInstance("SHA-256");
             /* Applies sha256 to our input */
-            var hash = digest.digest(
-                            input.getBytes(StandardCharsets.UTF_8));
+            var hash = digest
+                              .digest(input.getBytes(
+                                       StandardCharsets.UTF_8));
             var hexString = new StringBuilder();
             for (byte elem: hash) {
                 String hex = Integer.toHexString(0xff & elem);

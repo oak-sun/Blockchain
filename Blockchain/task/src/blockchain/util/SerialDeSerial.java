@@ -1,13 +1,10 @@
-package blockchain;
+package blockchain.util;
 
 import lombok.NoArgsConstructor;
-
 import java.io.*;
-
 
 @NoArgsConstructor
 public class SerialDeSerial {
-
     public static void serialize(Object obj, String fileName)
                                             throws IOException {
         try (var fileOut = new FileOutputStream(fileName);
@@ -17,12 +14,11 @@ public class SerialDeSerial {
             objectOut.writeObject(obj);
         }
     }
-
     public static Object deserialize(String fileName)
-                   throws IOException, ClassNotFoundException {
+                                     throws IOException,
+                                    ClassNotFoundException {
         Object obj;
         try (var fileIn = new FileInputStream(fileName);
-
              var bufferedIn = new BufferedInputStream(fileIn);
              var objectIn = new ObjectInputStream(bufferedIn)) {
             obj = objectIn.readObject();

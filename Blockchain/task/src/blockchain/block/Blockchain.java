@@ -1,80 +1,93 @@
 package blockchain.block;
 
-import blockchain.SerialDeSerial;
-import java.io.IOException;
+import blockchain.util.Pause;
+import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.List;
 import java.util.ArrayList;
 
-public class Blockchain implements Serializable {
+@Data
+public
+class Blockchain implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 3705442926703754261L;
-    private final List<Block> blocks;
-    private final int zeroes;
-
-    public static Blockchain getInstance(int zeroes) {
-        return new Blockchain(zeroes);
+    private static final long serialVersionUID = 9L;
+    ArrayList<Block> blocks = new ArrayList<>();
+    private int zeroesInHash;
+    Blockchain(int zeroesInHash) {
+        this.zeroesInHash = zeroesInHash;
+    }
+    public int size() {
+        return blocks.size();
     }
 
-    private Blockchain(int zeroes) {
-        this.blocks = new ArrayList<>();
-        this.zeroes = zeroes;
+    Block getBlockBy(int id) {
+        return blocks.get(id - 1);
     }
-
-    @Override
-    public String toString() {
-        final var sb = new StringBuilder();
-        for (var block : blocks) {
-            sb.append(block).append("\n\n");
-        }
-        return String.valueOf(sb);
+    Block getLastBlock() {
+        return (size() > 0) ?
+                blocks.get(size() - 1)
+                : null;
     }
-
-    public void generateBlocks(int blocksNumber) {
-        for (var i = 0; i < blocksNumber; i++) {
-            generateBlock();
+    void add(Block block) {
+        if (canAdd(block)) {
+            blocks.add(block);
+            adjustZeroesInHash();
         }
     }
+    void adjustZeroesInHash() {
+        var elapsedTime = Pause.getElapsedSeconds();
+        printGenerationTimeMsg(elapsedTime);
 
-    private void generateBlock() {
-        blocks
-                .add(Block.getProved(
-                blocks.size(), blocks.isEmpty()
-                                ? "0" : blocks
-                                 .get(blocks.size() - 1)
-                                 .getBlockHash(), zeroes));
-        try {
-            SerialDeSerial.serialize(this,
-                            "./Database.txt");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        if (elapsedTime > 60) {
+            zeroesInHash -= 1;
+            System.out.printf("N was decreased to %d\n\n",
+                              zeroesInHash);
+        } else if (elapsedTime < 10) {
+            zeroesInHash += 1;
+            System.out.printf("N was increased to %d\n\n",
+                              zeroesInHash);
+        } else
+            System.out.println("N stays the same\n\n");
+    }
+    private static void printGenerationTimeMsg(long sec) {
+        System.out.printf(
+                "Block was generating for %d seconds\n", sec);
+    }
+    boolean canAdd(Block block) {
+        return block
+                .hasValid(zeroesInHash)
+                &
+                canHaveValid(block);
     }
 
-    public boolean isValid() {
-        for (var i = 0; i < blocks.size(); i++) {
-
-            if (i == 0) {
-                if (!blocks
-                        .get(i)
-                        .getPrevBlockHash()
-                        .equals("0"))
-                    return false;
-            } else {
-                if (!blocks
-                        .get(i)
-                        .getPrevBlockHash()
-                        .equals(
-                                blocks
-                                        .get(i - 1)
-                                        .getBlockHash()))
-                    return false;
+    boolean canHaveValid(Block block) {
+        var id = block.id;
+        var isValid = true;
+        if (id > 1) {
+            var previousHash = block.previousHash;
+            var previousBlock = getBlockBy(id - 1);
+            var hash = previousBlock.generateHash();
+            if (!hash.equals(previousHash)) {
+                isValid = false;
             }
-            if (!blocks.get(i).isProved(zeroes))
-                return false;
         }
-        return true;
+        return isValid;
+    }
+    boolean isValid() {
+        var chainIsValid = true;
+        for (Block bl : blocks) {
+            if (!canHaveValid(bl)) {
+                chainIsValid = false;
+                break;
+            }
+        }
+        return chainIsValid;
+    }
+    void printAllBlock() {
+        for (Block bl : blocks) {
+            bl.printInfo();
+            System.out.println();
+        }
     }
 }
