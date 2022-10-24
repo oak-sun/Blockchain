@@ -452,7 +452,7 @@ files:
         }
     }
   learner_created: true
-- name: src/blockchain/block/BlockchainFactory.java
+- name: src/blockchain/block/BlockFactory.java
   visible: true
   learner_created: true
 - name: src/blockchain/block/BlockMiner.java
@@ -536,4 +536,4 @@ status: Solved
 feedback:
   message: Congratulations!
   time: Sat, 22 Oct 2022 03:01:56 UTC
-record: -1
+record: 3

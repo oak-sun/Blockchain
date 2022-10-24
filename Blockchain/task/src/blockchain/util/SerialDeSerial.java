@@ -1,28 +1,31 @@
 package blockchain.util;
 
-import lombok.NoArgsConstructor;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-@NoArgsConstructor
 public class SerialDeSerial {
-    public static void serialize(Object obj, String fileName)
-                                            throws IOException {
-        try (var fileOut = new FileOutputStream(fileName);
-
-             var bufferedOut = new BufferedOutputStream(fileOut);
-             var objectOut = new ObjectOutputStream(bufferedOut)) {
-            objectOut.writeObject(obj);
-        }
+    public static void serialize(Object obj,
+                                 String fileName)
+                                 throws IOException {
+        var objout = new ObjectOutputStream(
+                        new BufferedOutputStream(
+                             new FileOutputStream(fileName)));
+        objout.writeObject(obj);
+        objout.close();
     }
     public static Object deserialize(String fileName)
-                                     throws IOException,
-                                    ClassNotFoundException {
-        Object obj;
-        try (var fileIn = new FileInputStream(fileName);
-             var bufferedIn = new BufferedInputStream(fileIn);
-             var objectIn = new ObjectInputStream(bufferedIn)) {
-            obj = objectIn.readObject();
-        }
+                                  throws IOException,
+                                  ClassNotFoundException {
+        var objIn = new ObjectInputStream(
+                      new BufferedInputStream(
+                              new FileInputStream(fileName)));
+        var obj = objIn.readObject();
+        objIn.close();
         return obj;
     }
 }

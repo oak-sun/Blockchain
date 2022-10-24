@@ -1,5 +1,6 @@
 apply plugin: 'hyperskill'
 
+
 subprojects {
     apply plugin: 'application'
     apply plugin: 'java'
@@ -29,6 +30,12 @@ subprojects {
 
     dependencies {
         testImplementation 'com.github.hyperskill:hs-test:release-SNAPSHOT'
+
+        compileOnly 'org.projectlombok:lombok:1.18.24'
+        annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+        testCompileOnly 'org.projectlombok:lombok:1.18.24'
+        testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
     }
 
     configurations.all {
@@ -61,11 +68,6 @@ configure(subprojects.findAll {it.name != 'util'}) {
     dependencies {
         testImplementation project(':util').sourceSets.main.output
         testImplementation project(':util').sourceSets.test.output
-        compileOnly 'org.projectlombok:lombok:1.18.24'
-        annotationProcessor 'org.projectlombok:lombok:1.18.24'
-
-        testCompileOnly 'org.projectlombok:lombok:1.18.24'
-        testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
     }
 }
 

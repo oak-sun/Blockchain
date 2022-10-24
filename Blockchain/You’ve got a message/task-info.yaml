@@ -287,6 +287,212 @@ files:
         }
     }
   learner_created: false
+- name: Database.txt
+  visible: true
+  text: "��\0\x05sr\0\eblockchain.block.Blockchain3l`���<\x15\x02\0\x02I\0\x06zeroesL\0\
+    \x06blockst\0\x10Ljava/util/List;xp\0\0\0\x02sr\0\x13java.util.ArrayListx��\x1d\
+    ��a�\x03\0\x01I\0\x04sizexp\0\0\0\x05w\x04\0\0\0\x05sr\0\x16blockchain.block.Block\x18\
+    \ �\x11��zB\x02\0\x06I\0\x02idJ\0\vmagicNumberI\0\x0etimeToGenerateJ\0\ttimestampL\0\
+    \tblockHasht\0\x12Ljava/lang/String;L\0\nprevBlockHashq\0~\0\x06xp\0\0\0\0�d\x1d\
+    �\x06V+f\0\0\0\0\0\0\x01��\n�\x10t\0@0032ade335adc93aee375ebf9fe7c0734929a4e06dacd2ea3ad7e5e4a631bebdt\0\
+    \x010sq\0~\0\x05\0\0\0\x01��]\n �V�\0\0\0\0\0\0\x01��\n�Rt\0@001aba86173044036fc8ea2ea84386fb1b9aad13ad759b5587115793a9ad9163q\0\
+    ~\0\bsq\0~\0\x05\0\0\0\x02t��}���\0\0\0\0\0\0\x01��\n�Ut\0@009df7703e0322c96afe254c796b8f355035cf3948531dab3cf22e0145342ae3q\0\
+    ~\0\vsq\0~\0\x05\0\0\0\x03�\b\x17��,W�\0\0\0\0\0\0\x01��\n�bt\0@009521a80d64679c72f334fe44507e42bae319b6c27bce6a0ef87f9b7186e90eq\0\
+    ~\0\nsq\0~\0\x05\0\0\0\x04��g���U�\0\0\0\0\0\0\x01��\n�vt\0@0045a661f20d5c1a5593a6b7025a41282f9d9b4d4bee2b3a2e8d7c606052a589q\0\
+    ~\0\x0fx"
+  learner_created: true
+- name: src/blockchain/util/SerialDeSerial.java
+  visible: true
+  text: |
+    package blockchain.util;
+
+    import lombok.NoArgsConstructor;
+    import java.io.*;
+
+    @NoArgsConstructor
+    public class SerialDeSerial {
+        public static void serialize(Object obj, String fileName)
+                                                throws IOException {
+            try (var fileOut = new FileOutputStream(fileName);
+
+                 var bufferedOut = new BufferedOutputStream(fileOut);
+                 var objectOut = new ObjectOutputStream(bufferedOut)) {
+                objectOut.writeObject(obj);
+            }
+        }
+        public static Object deserialize(String fileName)
+                                         throws IOException,
+                                        ClassNotFoundException {
+            Object obj;
+            try (var fileIn = new FileInputStream(fileName);
+                 var bufferedIn = new BufferedInputStream(fileIn);
+                 var objectIn = new ObjectInputStream(bufferedIn)) {
+                obj = objectIn.readObject();
+            }
+            return obj;
+        }
+    }
+  learner_created: true
+- name: src/blockchain/util/StringUtil.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/block/factories/MagicFactory.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/block/factories/PlainFactory.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/block/factories/BlockFactory.java
+  visible: true
+  text: |
+    package blockchain.block;
+
+    import blockchain.util.Pause;
+    import lombok.Data;
+    import lombok.NoArgsConstructor;
+    import java.util.HashSet;
+    import java.util.Set;
+    import java.util.concurrent.Callable;
+    import java.util.concurrent.ExecutionException;
+    import java.util.concurrent.Executors;
+
+    @NoArgsConstructor
+    @Data
+    public
+    class BlockchainFactory {
+        private static BlockchainFactory instance =
+                                       new BlockchainFactory();
+        int threads = Runtime
+                     .getRuntime()
+                     .availableProcessors();
+        public static BlockchainFactory getInstance() {
+            return instance;
+        }
+        void setThreads(int threads) {
+            this.threads = Math.min(threads,
+                                    Runtime
+                                         .getRuntime()
+                                         .availableProcessors());
+        }
+
+        public Blockchain generateChainSizeOf(int chainSize,
+                                              int zeroesInHash)
+                                       throws ExecutionException,
+                                       InterruptedException {
+            var blockChain = new Blockchain(zeroesInHash);
+            extend(blockChain, chainSize);
+            return blockChain;
+        }
+        void extend(Blockchain blockChain, int blocksNum)
+                                    throws ExecutionException,
+                                    InterruptedException {
+            for (int i = 0; i < blocksNum; i++) {
+                extendByOneBlock(blockChain);
+            }
+        }
+        void extendByOneBlock(Blockchain blockChain)
+                                             throws ExecutionException,
+                                             InterruptedException {
+            Pause.reset();
+            Set<Callable<Block>> miners = new HashSet<>();
+            var executorService = Executors
+                                             .newFixedThreadPool(threads);
+            for (int i = 1; i <= threads; i++) {
+                var miner = new BlockMiner(blockChain);
+                miner.setId(i);
+                miners.add(miner);
+            }
+            var result = executorService
+                               .invokeAny(miners);
+            result.printInfo();
+            blockChain.add(result);
+            executorService.shutdownNow();
+        }
+    }
+  learner_created: true
+- name: src/blockchain/block/factories/ChatFactory.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/executor/MinerTask.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/executor/ChatTask.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/Executor.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/Block.java
+  visible: true
+  text: |
+    package blockchain.block;
+
+    import blockchain.util.StringUtil;
+    import lombok.Data;
+
+    import java.io.Serial;
+    import java.io.Serializable;
+    import java.util.Date;
+
+    @Data
+    class Block implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 8L;
+        String previousHash;
+        long timesStamp = new Date().getTime();
+        int id;
+        int magicNumber;
+        int minerId;
+
+        Block(String hash, int id) {
+            this.previousHash = hash;
+            this.id = id;
+        }
+        void printInfo() {
+            var output = "Block:" +
+                    "\nCreated by miner # " +
+                    minerId +
+                    "\nId: " +
+                    id +
+                    "\nTimestamp: " +
+                    timesStamp +
+                    "\nMagic number: " +
+                    magicNumber +
+                    "\nHash of the previous block:\n" +
+                    previousHash +
+                    "\nHash of the block:\n" +
+                    generateHash();
+            System.out.println(output);
+        }
+        boolean hasValid(int zeroesInHash) {
+            return generateHash()
+                        .matches("0{" + zeroesInHash + "}\\w*");
+        }
+        String generateHash() {
+            return StringUtil
+                    .applySha256(previousHash +
+                                 id +
+                                 minerId +
+                                 timesStamp +
+                                 magicNumber);
+        }
+        String generateHashUsing(int magicNumber) {
+            return StringUtil
+                    .applySha256(previousHash +
+                                      id +
+                                      minerId +
+                                      timesStamp +
+                                      magicNumber);
+        }
+    }
+  learner_created: true
+- name: src/blockchain/Miner.java
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/learn/step/5416#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Mon, 24 Oct 2022 03:32:34 UTC
 record: -1

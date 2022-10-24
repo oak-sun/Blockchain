@@ -17,9 +17,11 @@
         <module name="Blockchain.Blockchain-task-build-tmp.test" />
         <module name="Blockchain.Blockchain-task-build-test-results.test" />
         <module name="Blockchain.Blockchain-task-build-reports-tests.main" />
+        <module name="Blockchain.util.test" />
         <module name="Blockchain.Blockchain-task.test" />
         <module name="Blockchain.Blockchain-task.main" />
         <module name="Blockchain.Blockchain-task-build-tmp.main" />
+        <module name="Blockchain.util.main" />
         <module name="Blockchain.Blockchain-task-build-reports-tests.test" />
       </profile>
     </annotationProcessing>
