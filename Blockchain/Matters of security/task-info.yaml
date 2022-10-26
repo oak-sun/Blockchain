@@ -252,6 +252,257 @@ files:
         }
     }
   learner_created: false
+- name: src/blockchain/util/StringUtil.java
+  visible: true
+  text: |-
+    package blockchain.util;
+
+    import java.nio.charset.StandardCharsets;
+    import java.security.MessageDigest;
+
+    public class StringUtil {
+        public static String applySha256(String input){
+            try {
+                /* Applies sha256 to our input */
+                var hash =  MessageDigest
+                                  .getInstance("SHA-256")
+                                  .digest(input
+                                          .getBytes(StandardCharsets.UTF_8));
+                var hexString = new StringBuilder();
+                for (byte elem: hash) {
+                    var hex = Integer.toHexString(0xff & elem);
+                    if(hex.length() == 1) hexString.append('0');
+                    hexString.append(hex);
+                }
+                return hexString.toString();
+            }
+            catch(Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+  learner_created: true
+- name: src/blockchain/util/Serializer.java
+  visible: true
+  text: |
+    package blockchain.util;
+
+    import java.io.BufferedInputStream;
+    import java.io.BufferedOutputStream;
+    import java.io.FileInputStream;
+    import java.io.FileOutputStream;
+    import java.io.IOException;
+    import java.io.ObjectInputStream;
+    import java.io.ObjectOutputStream;
+
+    public class SerialDeSerial {
+        public static void serialize(Object obj,
+                                     String fileName)
+                                     throws IOException {
+            var objout = new ObjectOutputStream(
+                            new BufferedOutputStream(
+                                 new FileOutputStream(fileName)));
+            objout.writeObject(obj);
+            objout.close();
+        }
+        public static Object deserialize(String fileName)
+                                      throws IOException,
+                                      ClassNotFoundException {
+            var objIn = new ObjectInputStream(
+                          new BufferedInputStream(
+                                  new FileInputStream(fileName)));
+            var obj = objIn.readObject();
+            objIn.close();
+            return obj;
+        }
+    }
+  learner_created: true
+- name: src/blockchain/management/TaskManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/management/CryptoManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/management/KeysManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/management/ValidationManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/util/PreInstaller.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/util/InvalidBlockchainException.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/util/BlockChainSecurityException.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/model/Post.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/model/block/Block.java
+  visible: true
+  text: |-
+    package blockchain;
+
+    import blockchain.util.StringUtil;
+    import lombok.Data;
+
+    import java.util.Date;
+    import java.util.List;
+    import java.util.concurrent.ThreadLocalRandom;
+    import java.util.stream.Collectors;
+
+    @Data
+    public class Block {
+        private final String previousHash;
+        private final String hash;
+        private final long timestamp;
+        private final int uid;
+        private final int magicNumber;
+        private final int miningDuration;
+        private final String message;
+
+        public Block(Block previous,
+                     int zeros,
+                     List<String> messages) {
+
+            previousHash = previous == null ?
+                                    "0" : previous.hash;
+            timestamp = new Date().getTime();
+            uid = previous == null ?
+                          0 : previous.uid + 1;
+            message = messages
+                    .isEmpty() ?
+                    null : messages
+                          .stream()
+                          .collect(
+                                  Collectors
+                                          .joining(
+                                                  System.lineSeparator()));
+
+            String hashProbe;
+            int magicNumberProbe;
+            var timer = System.currentTimeMillis();
+            do {
+                if (Thread
+                        .currentThread()
+                        .isInterrupted())
+                    throw new RuntimeException(
+                            new InterruptedException());
+
+                magicNumberProbe = randomInt();
+                hashProbe = StringUtil
+                                 .applySha256(serialize(uid,
+                                                       timestamp,
+                                                       magicNumberProbe,
+                                                       previousHash,
+                                                       message));
+            } while (!hashProbe
+                             .startsWith("0".repeat(zeros)));
+            miningDuration = (int) ((System.currentTimeMillis() -
+                                     timer)
+                                    / 1000);
+            magicNumber = magicNumberProbe;
+            hash = hashProbe;
+        }
+        private int randomInt() {
+            return ThreadLocalRandom
+                    .current()
+                    .nextInt();
+        }
+        private String serialize(int uid,
+                                 long timestamp,
+                                 int magicNumber,
+                                 String previousHash,
+                                 String message) {
+            return String.format("%d-%d-%d-%s-%s",
+                                 uid,
+                                 timestamp,
+                                 magicNumber,
+                                 previousHash,
+                                 message);
+        }
+
+    }
+  learner_created: true
+- name: src/blockchain/model/block/MagicImpl.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/model/block/ChatImpl.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/model/block/Data.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/model/factories/BlockFactory.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/model/factories/MagicFactory.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/model/factories/ChatFactory.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/model/Blockchain.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/management/MinerManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/management/UserManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/util/Recorder.java
+  visible: true
+  learner_created: true
+- name: src/resources/log4j2.xml
+  visible: true
+  learner_created: true
+- name: src/resources/blockchain.data
+  visible: true
+  learner_created: true
+- name: src/resources/blockchain.ser
+  visible: true
+  learner_created: true
+- name: src/resources/blockchain.txt
+  visible: true
+  learner_created: true
+- name: src/resources/Database.txt
+  visible: true
+  text: "��\0\x05sr\0\eblockchain.block.Blockchain3l`���<\x15\x02\0\x02I\0\x06zeroesL\0\
+    \x06blockst\0\x10Ljava/util/List;xp\0\0\0\x02sr\0\x13java.util.ArrayListx��\x1d\
+    ��a�\x03\0\x01I\0\x04sizexp\0\0\0\x05w\x04\0\0\0\x05sr\0\x16blockchain.block.Block\x18\
+    \ �\x11��zB\x02\0\x06I\0\x02idJ\0\vmagicNumberI\0\x0etimeToGenerateJ\0\ttimestampL\0\
+    \tblockHasht\0\x12Ljava/lang/String;L\0\nprevBlockHashq\0~\0\x06xp\0\0\0\0�d\x1d\
+    �\x06V+f\0\0\0\0\0\0\x01��\n�\x10t\0@0032ade335adc93aee375ebf9fe7c0734929a4e06dacd2ea3ad7e5e4a631bebdt\0\
+    \x010sq\0~\0\x05\0\0\0\x01��]\n �V�\0\0\0\0\0\0\x01��\n�Rt\0@001aba86173044036fc8ea2ea84386fb1b9aad13ad759b5587115793a9ad9163q\0\
+    ~\0\bsq\0~\0\x05\0\0\0\x02t��}���\0\0\0\0\0\0\x01��\n�Ut\0@009df7703e0322c96afe254c796b8f355035cf3948531dab3cf22e0145342ae3q\0\
+    ~\0\vsq\0~\0\x05\0\0\0\x03�\b\x17��,W�\0\0\0\0\0\0\x01��\n�bt\0@009521a80d64679c72f334fe44507e42bae319b6c27bce6a0ef87f9b7186e90eq\0\
+    ~\0\nsq\0~\0\x05\0\0\0\x04��g���U�\0\0\0\0\0\0\x01��\n�vt\0@0045a661f20d5c1a5593a6b7025a41282f9d9b4d4bee2b3a2e8d7c606052a589q\0\
+    ~\0\x0fx"
+  learner_created: true
 feedback_link: https://hyperskill.org/learn/step/5417#comment
-status: Unchecked
-record: -1
+status: Failed
+feedback:
+  message: "Wrong answer in test #1\n\nPlease find below the output of your program\
+    \ during this failed test.\n\n---\n\nstdout:\n03:35:52.962 [Main] ERROR blockchain.util.Recorder\
+    \ - Error RSA-encoding key pair:\n\nstderr:\njava.io.IOException: ./blockchain/src/main/resources/data/Peter_rsa\
+    \ (Нет такого файла или каталога)\n\tat blockchain.management.KeysManager.writeToFile(KeysManager.java:45)\n\
+    \tat blockchain.management.KeysManager.createKeys(KeysManager.java:26)\n\tat blockchain.management.TaskManager.generateKeyPairs(TaskManager.java:73)\n\
+    \tat blockchain.management.TaskManager.startChatClients(TaskManager.java:55)\n\
+    \tat blockchain.management.TaskManager.run(TaskManager.java:44)\n\tat blockchain.Main.main(Main.java:8)\n\
+    \tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\
+    \tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\n\
+    \tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\
+    \tat java.base/java.lang.reflect.Method.invoke(Method.java:568)\n\tat org.hyperskill.hstest.testing.execution.MainMethodExecutor.invokeMain(MainMethodExecutor.java:160)\n\
+    \tat org.hyperskill.hstest.testing.execution.MainMethodExecutor.lambda$launch$1(MainMethodExecutor.java:188)\n\
+    \tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)\n\
+    \tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)\n\tat\
+    \ java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)\n\
+    \tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)\n\
+    \tat java.base/java.lang.Thread.run(Thread.java:833)"
+  time: Tue, 25 Oct 2022 17:35:53 UTC
+record: 5

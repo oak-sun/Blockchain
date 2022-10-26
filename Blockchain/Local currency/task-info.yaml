@@ -278,6 +278,298 @@ files:
         }
     }
   learner_created: false
+- name: Database.txt
+  visible: true
+  text: "��\0\x05sr\0\eblockchain.block.Blockchain3l`���<\x15\x02\0\x02I\0\x06zeroesL\0\
+    \x06blockst\0\x10Ljava/util/List;xp\0\0\0\x02sr\0\x13java.util.ArrayListx��\x1d\
+    ��a�\x03\0\x01I\0\x04sizexp\0\0\0\x05w\x04\0\0\0\x05sr\0\x16blockchain.block.Block\x18\
+    \ �\x11��zB\x02\0\x06I\0\x02idJ\0\vmagicNumberI\0\x0etimeToGenerateJ\0\ttimestampL\0\
+    \tblockHasht\0\x12Ljava/lang/String;L\0\nprevBlockHashq\0~\0\x06xp\0\0\0\0�d\x1d\
+    �\x06V+f\0\0\0\0\0\0\x01��\n�\x10t\0@0032ade335adc93aee375ebf9fe7c0734929a4e06dacd2ea3ad7e5e4a631bebdt\0\
+    \x010sq\0~\0\x05\0\0\0\x01��]\n �V�\0\0\0\0\0\0\x01��\n�Rt\0@001aba86173044036fc8ea2ea84386fb1b9aad13ad759b5587115793a9ad9163q\0\
+    ~\0\bsq\0~\0\x05\0\0\0\x02t��}���\0\0\0\0\0\0\x01��\n�Ut\0@009df7703e0322c96afe254c796b8f355035cf3948531dab3cf22e0145342ae3q\0\
+    ~\0\vsq\0~\0\x05\0\0\0\x03�\b\x17��,W�\0\0\0\0\0\0\x01��\n�bt\0@009521a80d64679c72f334fe44507e42bae319b6c27bce6a0ef87f9b7186e90eq\0\
+    ~\0\nsq\0~\0\x05\0\0\0\x04��g���U�\0\0\0\0\0\0\x01��\n�vt\0@0045a661f20d5c1a5593a6b7025a41282f9d9b4d4bee2b3a2e8d7c606052a589q\0\
+    ~\0\x0fx"
+  learner_created: true
+- name: src/blockchain/services/CryptoManager.java
+  visible: true
+  text: |
+    package blockchain.services;
+
+    import blockchain.chat.Post;
+    import java.security.InvalidKeyException;
+    import java.security.NoSuchAlgorithmException;
+    import java.security.Signature;
+    import java.security.SignatureException;
+
+    public class Verifier {
+        public static boolean verify(Post post) {
+
+            Signature signature;
+            try {
+                signature = Signature
+                                    .getInstance("SHA1withRSA");
+                signature
+                        .initVerify(post.publicKey());
+                var data = post.postman() +
+                           post.text() +
+                           post.dateTime().toString() +
+                           post.id();
+                signature.update(
+                        data.getBytes());
+                return signature.verify(
+                        post.signature());
+            } catch (NoSuchAlgorithmException |
+                     InvalidKeyException |
+                     SignatureException e) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+    }
+  learner_created: true
+- name: src/blockchain/transaction/Transaction.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/services/Miner.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/util/StringUtil.java
+  visible: true
+  text: |-
+    package blockchain.util;
+
+    import java.nio.charset.StandardCharsets;
+    import java.security.MessageDigest;
+
+    public class StringUtil {
+        public static String applySha256(String input){
+            try {
+                /* Applies sha256 to our input */
+                var hash =  MessageDigest
+                                  .getInstance("SHA-256")
+                                  .digest(input
+                                          .getBytes(StandardCharsets.UTF_8));
+                var hexString = new StringBuilder();
+                for (byte elem: hash) {
+                    var hex = Integer.toHexString(0xff & elem);
+                    if(hex.length() == 1) hexString.append('0');
+                    hexString.append(hex);
+                }
+                return hexString.toString();
+            }
+            catch(Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+  learner_created: true
+- name: src/blockchain/util/Serializer.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/services/TaskManager.java
+  visible: true
+  text: |
+    package blockchain.services;
+
+    import blockchain.block.Blockchain;
+    import blockchain.chat.Postman;
+    import blockchain.util.Serializer;
+    import lombok.AllArgsConstructor;
+    import java.util.ArrayList;
+    import java.util.List;
+
+    @AllArgsConstructor
+    public class Executor {
+        Blockchain blockchain;
+        public void startBlockchain(int nbOfThreads,
+                                    int nbOfBlocksToAdd) {
+            var totalNbOfBlocks = nbOfBlocksToAdd +
+                                  blockchain.getNbOfBlocks();
+            List<Thread> threads = new ArrayList<>(nbOfThreads);
+
+            for (int i = 0; i < nbOfThreads; i++) {
+                threads.add(new Thread(
+                        new Miner(blockchain, totalNbOfBlocks),
+                        "#" + (i + 1)
+                ));
+                threads.get(i).start();
+            }
+            startPostman();
+            for (Thread t : threads) {
+                try {
+                    t.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        private void startPostman() {
+            var postman = new Postman();
+            var postThread = new Thread(postman);
+            postThread.start();
+        }
+
+        public static Blockchain retrieveOrCreateBlockchain(String fileName) {
+
+            Blockchain blockchain;
+            try {
+                blockchain = (Blockchain) Serializer
+                                          .deserialize(fileName);
+                System.out.println("Retrieving existing Blockchain");
+
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                System.out.println("Creating new Blockchain");
+                blockchain = Blockchain.getInstance();
+            }
+
+            if (!Validator
+                         .isBlockchainValid()) {
+                System.out.println("Invalid blockchain! Creating new one");
+                blockchain = Blockchain.getInstance();
+            }
+            return blockchain;
+        }
+    }
+  learner_created: true
+- name: src/blockchain/dao/Dao.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/services/FileManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/services/Verifier.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/dao/DaoImpl.java
+  visible: true
+  learner_created: true
+- name: private.key
+  visible: true
+  learner_created: true
+- name: src/blockchain/models/Block.java
+  visible: true
+  text: |-
+    package blockchain.block;
+
+    import blockchain.chat.Post;
+    import blockchain.util.GeneratorForHash;
+    import lombok.Getter;
+    import java.io.Serial;
+    import java.io.Serializable;
+    import java.util.List;
+    import java.util.Objects;
+    import java.util.stream.Collectors;
+
+    @Getter
+    public class Block implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 12L;
+        private final int id;
+        private final long timeStamp;
+        private final int magicNumber;
+        private final int generationDuration;
+        private String changeOfNbOfZeros;
+        private final String minerId;
+        private final String hash;
+        private final String hashOfPreviousBlock;
+        private final List<Post> posts;
+
+        public Block(int id,
+                     String hashOfPreviousBlock,
+                     long timestamp,
+                     int magicNumber,
+                     int generationDuration,
+                     List<Post> posts,
+                     String minerId) {
+            this.id = id;
+            this.hashOfPreviousBlock = hashOfPreviousBlock;
+            this.magicNumber = magicNumber;
+            this.generationDuration = generationDuration;
+            this.timeStamp = timestamp;
+            this.minerId = minerId;
+            this.posts = posts;
+            this.hash = GeneratorForHash
+                                     .generate(hashOfPreviousBlock,
+                                               id,
+                                               timeStamp,
+                                               magicNumber,
+                                               posts,
+                                               minerId);
+        }
+
+        public void setChangeOfZeros(int change) {
+            switch (change) {
+                case 0 -> this.changeOfNbOfZeros = "N stays the same";
+                case 1 -> this.changeOfNbOfZeros = "N was increased by 1";
+                case -1 -> this.changeOfNbOfZeros = "N was decreased by 1";
+                default -> this.changeOfNbOfZeros = "?";
+            }
+        }
+        @Override
+        public String toString() {
+            var strPosts = posts.isEmpty() ?
+                    "no messages" : posts
+                                   .stream()
+                                   .map(Objects::toString)
+                                   .collect(Collectors
+                                              .joining("\n"));
+            return String.format("Block: %n" +
+                            "Created by Miner %s%n" +
+                            "Id: %s%nTimestamp: %d%n" +
+                            "Magic number: %d%n" +
+                            "Hash of the previous block: %n%s%n" +
+                            "Hash of the block: %n%s%n" +
+                            "Block data:%n" +
+                            "%s%n" +
+                            "Block was generating for %d seconds%n" +
+                            "%s%n",
+                             minerId,
+                             id,
+                             timeStamp,
+                             magicNumber,
+                             hashOfPreviousBlock,
+                             hash,
+                             strPosts,
+                             generationDuration,
+                             changeOfNbOfZeros);
+        }
+    }
+  learner_created: true
+- name: src/blockchain/models/Blockchain.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/models/Dao.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/models/Miner.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/models/Transaction.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/managment/CryptoManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/managment/FileManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/managment/KeysManager.java
+  visible: true
+  learner_created: true
+- name: src/blockchain/managment/TasksManager.java
+  visible: true
+  learner_created: true
+- name: blockchain.txt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/learn/step/5418#comment
-status: Unchecked
-record: -1
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Wed, 26 Oct 2022 08:14:38 UTC
+record: 6
